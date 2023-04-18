@@ -1,0 +1,34 @@
+package com.qtlucas.qtlog;
+
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbManager;
+import android.util.Log;
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
+import com.hoho.android.usbserial.util.SerialInputOutputManager;
+import java.util.List;
+import java.nio.charset.StandardCharsets;
+
+public final class LoggerListener implements SerialInputOutputManager.Listener {
+    public static native void dataReceived(String str);
+
+    @Override
+    public void onNewData(byte[] data) {
+        if (data == null || data.length == 0)
+            return;
+
+        String str = new String(data, StandardCharsets.US_ASCII);
+        dataReceived(str);
+    }
+
+    @Override
+    public void onRunError(Exception e) {
+        Log.d("Lucas", e.getMessage());
+    }
+}
