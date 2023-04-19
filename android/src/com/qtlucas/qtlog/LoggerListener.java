@@ -14,17 +14,21 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Scanner;
 
 public final class LoggerListener implements SerialInputOutputManager.Listener {
-    public static native void dataReceived(String str);
+    public static native void dataReceived(byte[] data);
 
     @Override
     public void onNewData(byte[] data) {
         if (data == null || data.length == 0)
             return;
 
-        String str = new String(data, StandardCharsets.US_ASCII);
-        dataReceived(str);
+        dataReceived(data);
     }
 
     @Override

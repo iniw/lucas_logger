@@ -3,6 +3,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <string_view>
+#include <QBuffer>
 #ifdef ANDROID
 #include <QtCore/qjniobject.h>
 #include <android/log.h>
@@ -25,7 +26,7 @@ QLogger::QLogger(QWidget *parent)
     instance = this;
 #ifdef ANDROID
     const JNINativeMethod methods[] = {
-       "dataReceived", "(Ljava/lang/String;)V", (void*)&QLogger::javaMensagemRecebida
+       "dataReceived", "([B)V", (void*)&QLogger::javaMensagemRecebida
     };
     QJniEnvironment env;
     env.registerNativeMethods("com/qtlucas/qtlog/LoggerListener", methods, 1);
@@ -43,25 +44,22 @@ QLogger::QLogger(QWidget *parent)
 }
 
 void QLogger::linhaRecebida(QByteArray str) {
-    qDebug() << str;
+    qDebug() << "recebido: " << str;
     if (str.front() == '$') {
-            auto view = QLatin1StringView(str.data() + 1, str.size() - 1);
-            auto separador = view.indexOf(':');
-
-            auto nome = view.sliced(0, separador);
-            auto valor = view.sliced(separador + 1);
-
-            auto child = instance->findChild<QLabel*>(nome.toString());
-            if (child)
-                child->setText(valor.toString());
-
-            if (nome == "ativa") {
-                instance->ui->infoFila->setTitle(QString("Fila de estações | Ativa = ").append(valor));
-                return;
-            }
+        auto view = QLatin1StringView(str.data() + 1, str.size() - 1);
+        auto separador = view.indexOf(':');
+        if (separador == -1 || separador == view.size() - 1)
             return;
+
+        auto nome = view.sliced(0, separador);
+        auto valor = view.sliced(separador + 1);
+
+        auto child = instance->findChild<QLabel*>(nome.toString());
+        if (child)
+            QMetaObject::invokeMethod(child, "setText", Qt::AutoConnection  , Q_ARG(QString, valor.toString()));
+    } else {
+        QMetaObject::invokeMethod(instance->ui->logSerial, "appendPlainText", Qt::AutoConnection, Q_ARG(QString, str));
     }
-    instance->ui->logSerial->appendPlainText(str);
 }
 
 void QLogger::mensagemRecebida() {
@@ -80,8 +78,9 @@ void QLogger::mensagemRecebida() {
 }
 
 #ifdef ANDROID
-void QLogger::javaMensagemRecebida(JNIEnv* env, jobject thiz, jbyteArray jdata) {
-    static QByteArray buffer = "";
+void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
+    static QByteArray buffer;
+
     jsize jdataSize = env->GetArrayLength(jdata);
     if (jdataSize == 0)
         return;
@@ -89,18 +88,14 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject thiz, jbyteArray jdata) 
     auto jelements = env->GetByteArrayElements(jdata, nullptr);
 
     buffer.append((const char*)jelements, jdataSize);
-    auto str = QLatin1StringView((const char*)jelements, jdataSize);
-    LOGD("recebido: %s", str.data());
 
     env->ReleaseByteArrayElements(jdata, jelements, JNI_ABORT);
 
-    qsizetype i = -1;
-    while ((i = buffer.indexOf('\n')) != -1) {
-        LOGD("pre-corte: %s", buffer.data());
-        LOGD("enviado: %s", buffer.first(i).data());
+    qsizetype i = buffer.indexOf('\n');
+    while (i != -1) {
         linhaRecebida(buffer.first(i));
         buffer.remove(0, i + 1);
-        LOGD("pos-corte: %s", buffer.data());
+        i = buffer.indexOf('\n');
     }
 }
 #endif
