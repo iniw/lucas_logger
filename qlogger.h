@@ -3,7 +3,9 @@
 
 #include <QMainWindow>
 #include <QSerialPort>
+#ifdef ANDROID
 #include <QJniEnvironment>
+#endif
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class QLogger; }
@@ -29,7 +31,10 @@ private:
     void finalizar();
     void reiniciarInterface();
 
-    static void javaMensagemRecebida(JNIEnv* env, jobject thiz, jstring str);
+#ifdef ANDROID
+    static void javaMensagemRecebida(JNIEnv* env, jobject thiz, jbyteArray str);
+#endif
+
     QSerialPort* port;
 
 private:

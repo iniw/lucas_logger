@@ -445,7 +445,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_27">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetMinimumSize</enum>
@@ -605,7 +605,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_28">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetMinimumSize</enum>
@@ -771,7 +771,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_29">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetMinimumSize</enum>
@@ -940,7 +940,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_30">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetMinimumSize</enum>
@@ -1106,7 +1106,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_31">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetMinimumSize</enum>
@@ -1272,9 +1272,9 @@
       </property>
       <property name="styleSheet">
        <string notr="true">margin: 0px;
-margin-bottom: 6px;
-margin-top: -4px;
-padding: 6px</string>
+margin-bottom: 0px;
+margin-top: 0px;
+padding: 4px</string>
       </property>
       <property name="text">
        <string>Enviar receita padrão</string>

@@ -2,8 +2,9 @@
 #include "ui_qlogger.h"
 #include <QSerialPort>
 #include <QSerialPortInfo>
-#include <QtCore/qjniobject.h>
 #include <string_view>
+#ifdef ANDROID
+#include <QtCore/qjniobject.h>
 #include <android/log.h>
 
 #define  LOG_TAG    "Lucas"
@@ -11,7 +12,7 @@
 #define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-
+#endif
 
 static QLogger* instance = nullptr;
 
@@ -78,19 +79,20 @@ void QLogger::mensagemRecebida() {
     }
 }
 
-void QLogger::javaMensagemRecebida(JNIEnv* env, jobject thiz, jstring jstr) {
+#ifdef ANDROID
+void QLogger::javaMensagemRecebida(JNIEnv* env, jobject thiz, jbyteArray jdata) {
     static QByteArray buffer = "";
-    jsize jstrSize = env->GetStringUTFLength(jstr);
-    if (jstrSize == 0)
+    jsize jdataSize = env->GetArrayLength(jdata);
+    if (jdataSize == 0)
         return;
 
-    auto jdata = env->GetStringUTFChars(jstr, nullptr);
+    auto jelements = env->GetByteArrayElements(jdata, nullptr);
 
-    buffer.append(jdata, jstrSize);
-    auto str = QLatin1StringView((const char*)jdata, jstrSize);
+    buffer.append((const char*)jelements, jdataSize);
+    auto str = QLatin1StringView((const char*)jelements, jdataSize);
     LOGD("recebido: %s", str.data());
 
-    env->ReleaseStringUTFChars(jstr, jdata);
+    env->ReleaseByteArrayElements(jdata, jelements, JNI_ABORT);
 
     qsizetype i = -1;
     while ((i = buffer.indexOf('\n')) != -1) {
@@ -101,6 +103,7 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject thiz, jstring jstr) {
         LOGD("pos-corte: %s", buffer.data());
     }
 }
+#endif
 
 void QLogger::enviarReceitaPadrao() {
     auto numBytes = port->write("$R\n");
