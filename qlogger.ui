@@ -170,6 +170,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>|</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QLabel" name="tempTargetBoiler">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -270,6 +277,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>|</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QLabel" name="tempTargetBico">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -315,13 +329,6 @@
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0" alignment="Qt::AlignLeft">
-           <widget class="QLabel" name="label_14">
-            <property name="text">
-             <string>Posição</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QWidget" name="widget_5" native="true">
             <property name="sizePolicy">
@@ -357,6 +364,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>|</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QLabel" name="posicaoY">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -370,6 +384,13 @@
               </widget>
              </item>
             </layout>
+           </widget>
+          </item>
+          <item row="0" column="0" alignment="Qt::AlignLeft">
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>Posição</string>
+            </property>
            </widget>
           </item>
          </layout>
@@ -412,7 +433,7 @@
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>| Boca ativa =</string>
+          <string>| Estação ativa =</string>
          </property>
         </widget>
        </item>
@@ -1296,52 +1317,125 @@
      </widget>
     </item>
     <item alignment="Qt::AlignHCenter">
-     <widget class="QPushButton" name="enviarReceitaPadrao">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
+     <widget class="QWidget" name="widget_2" native="true">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+       <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="focusPolicy">
-       <enum>Qt::ClickFocus</enum>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">margin: 0px;
-margin-bottom: 0px;
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="enviarCmdReceitaPadrao">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">margin: 0px;
+margin-bottom: 6px;
 margin-top: 0px;
 padding: 4px</string>
-      </property>
-      <property name="text">
-       <string>Enviar receita padrão</string>
-      </property>
-      <property name="checkable">
-       <bool>false</bool>
-      </property>
-      <property name="checked">
-       <bool>false</bool>
-      </property>
-      <property name="autoDefault">
-       <bool>false</bool>
-      </property>
-      <property name="default">
-       <bool>false</bool>
-      </property>
-      <property name="flat">
-       <bool>false</bool>
-      </property>
+         </property>
+         <property name="text">
+          <string>Enviar receita padrão</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="enviarCmdHoming">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">margin: 0px;
+margin-bottom: 6px;
+margin-top: 0px;
+padding: 4px</string>
+         </property>
+         <property name="text">
+          <string>Fazer homing</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>

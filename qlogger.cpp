@@ -41,6 +41,12 @@ QLogger::QLogger(QWidget *parent)
 #else
     tentarInicializarPort();
 #endif
+    QObject::connect(ui->enviarCmdReceitaPadrao, &QPushButton::clicked, this, [this]() {
+        enviarComando("$R");
+    });
+    QObject::connect(ui->enviarCmdHoming, &QPushButton::clicked, this, [this]() {
+        enviarComando("$H");
+    });
 }
 
 void QLogger::linhaRecebida(QByteArray str) {
@@ -56,7 +62,7 @@ void QLogger::linhaRecebida(QByteArray str) {
 
         auto child = instance->findChild<QLabel*>(nome.toString());
         if (child)
-            QMetaObject::invokeMethod(child, "setText", Qt::AutoConnection  , Q_ARG(QString, valor.toString()));
+            QMetaObject::invokeMethod(child, "setText", Qt::AutoConnection, Q_ARG(QString, valor.toString()));
     } else {
         QMetaObject::invokeMethod(instance->ui->logSerial, "appendPlainText", Qt::AutoConnection, Q_ARG(QString, str));
     }
@@ -100,12 +106,34 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
 }
 #endif
 
-void QLogger::enviarReceitaPadrao() {
-    auto numBytes = port->write("$R\n");
-    if (numBytes == -1)
+void QLogger::enviarComando(std::string_view cmd) {
+    if (cmd.empty())
+        return;
+
+#ifdef ANDROID
+    QJniEnvironment env;
+    jbyteArray buffer = env->NewByteArray(cmd.size() + 1);
+    if (!buffer)
+        return;
+
+    env->SetByteArrayRegion(buffer, 0, cmd.size(), (const jbyte*)cmd.data());
+    env->SetByteArrayRegion(buffer, cmd.size(), 1, (const jbyte*)"\n");
+
+    QJniObject::callStaticMethod<void>(
+        "com/qtlucas/qtlog/Logger",
+        "enviar",
+        "([B)V",
+        buffer);
+
+    // BUG: soltar essa memoria
+#else
+    auto numBytes = port->write(cmd.data());
+    numBytes += port->write("\n");
+    if (numBytes <= 0)
         qDebug() << "falha ao escrever - [" << port->errorString() << "]";
     else
         qDebug() << "enviados " << numBytes << " bytes";
+#endif
 }
 
 void QLogger::tentarInicializarPort() {
@@ -119,9 +147,7 @@ void QLogger::tentarInicializarPort() {
     } else {
         ui->statusBar->showMessage(QString("%1 | %2").arg(port->portName(), QString::number(port->baudRate())));
         QObject::connect(port, &QSerialPort::readyRead, this, &QLogger::mensagemRecebida);
-        QObject::connect(ui->enviarReceitaPadrao, &QPushButton::clicked, this, &QLogger::enviarReceitaPadrao);
     }
-
 }
 
 void QLogger::finalizar() {

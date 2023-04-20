@@ -26,8 +26,7 @@ private:
     static void linhaRecebida(QByteArray);
 
     void mensagemRecebida();
-    void enviarReceitaPadrao();
-
+    void enviarComando(std::string_view cmd);
     void finalizar();
     void reiniciarInterface();
 

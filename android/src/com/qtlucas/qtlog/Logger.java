@@ -13,6 +13,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.List;
 
 public final class Logger {
@@ -39,6 +40,14 @@ public final class Logger {
             }
         };
         connect(false);
+    }
+
+    public static void enviar(byte[] data) {
+        try {
+            mSerialPort.write(data, 0);
+        } catch (IOException e) {
+            Log.e("Lucas", "Falha ao enviar comando");
+        }
     }
 
     public static void connect(boolean granted) {
