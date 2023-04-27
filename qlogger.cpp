@@ -125,7 +125,7 @@ void QLogger::enviarComando(std::string_view cmd) {
         "([B)V",
         buffer);
 
-    // BUG: soltar essa memoria
+    env->DeleteLocalRef(buffer);
 #else
     auto numBytes = port->write(cmd.data());
     numBytes += port->write("\n");
@@ -150,7 +150,7 @@ void QLogger::tentarInicializarPort() {
     }
 }
 
-void QLogger::finalizar() {
+void QLogger::finalizar()   {
     if (port && port->isOpen())
         port->close();
 }
