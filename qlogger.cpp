@@ -42,12 +42,15 @@ QLogger::QLogger(QWidget *parent)
     tentarInicializarPort();
 #endif
     QObject::connect(ui->enviarCmdReceitaPadrao, &QPushButton::clicked, this, [this]() {
-        enviarComando("$R");
+        enviarComando("L4");
     });
     QObject::connect(ui->enviarCmdHoming, &QPushButton::clicked, this, [this]() {
-        enviarComando("$H");
+        enviarComando("G28 X Y");
     });
-}
+
+    QObject::connect(ui->enviarGcode, &QPushButton::clicked, this, [this]() {
+        enviarComando(ui->campoGcode->toPlainText().toLatin1());
+    });}
 
 void QLogger::linhaRecebida(QByteArray str) {
     qDebug() << "recebido: " << str;
@@ -106,8 +109,8 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
 }
 #endif
 
-void QLogger::enviarComando(std::string_view cmd) {
-    if (cmd.empty())
+void QLogger::enviarComando(QByteArray cmd) {
+    if (cmd.isEmpty())
         return;
 
 #ifdef ANDROID
@@ -127,8 +130,8 @@ void QLogger::enviarComando(std::string_view cmd) {
 
     env->DeleteLocalRef(buffer);
 #else
+    cmd.append("\n");
     auto numBytes = port->write(cmd.data());
-    numBytes += port->write("\n");
     if (numBytes <= 0)
         qDebug() << "falha ao escrever - [" << port->errorString() << "]";
     else
