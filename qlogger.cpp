@@ -42,62 +42,87 @@ QLogger::QLogger(QWidget *parent)
     tentarInicializarPort();
 #endif
     QObject::connect(ui->enviarCmdReceitaPadrao, &QPushButton::clicked, this, [this]() {
-        enviarComando("L4");
+        instance->enviarBufferParaPlaca("L4");
     });
     QObject::connect(ui->enviarCmdHoming, &QPushButton::clicked, this, [this]() {
-        enviarComando("G28 X Y");
+        instance->enviarBufferParaPlaca("G28 XY");
     });
-
     QObject::connect(ui->enviarGcode, &QPushButton::clicked, this, [this]() {
-        enviarComando(ui->campoGcode->toPlainText().toLatin1());
-    });}
-
-void QLogger::linhaRecebida(QByteArray str) {
-    qDebug() << "recebido: " << str;
-    if (str.front() == '$') {
-        auto view = QLatin1StringView(str.data() + 1, str.size() - 1);
-        auto separador = view.indexOf(':');
-        if (separador == -1 || separador == view.size() - 1)
+        auto bufferEscrito = ui->campoGcode->toPlainText().toLatin1();
+        if (bufferEscrito.isEmpty())
             return;
 
-        auto nome = view.sliced(0, separador);
-        auto valor = view.sliced(separador + 1);
+        // se nada foi colocado na fila nós enviamos a primeira linha dos comandos que o usuario escreveu
+        // e aguardamos receber o "ok" da placa para enviar a proxima
+        if (s_filaParaEnviar.isEmpty())
+            instance->enviarLinhaParaPlaca(bufferEscrito);
+
+        s_filaParaEnviar.append(bufferEscrito);
+    });
+}
+
+void QLogger::linhaRecebida(QByteArray bytes) {
+    qDebug() << "recebido: " << bytes;
+    if (bytes.front() == '$') {
+        auto str = QLatin1StringView(bytes.data() + 1, bytes.size() - 1);
+        auto separador = str.indexOf(':');
+        if (separador == -1 || separador == str.size() - 1)
+            return;
+
+        auto nome = str.sliced(0, separador);
+        auto valor = str.sliced(separador + 1);
 
         auto child = instance->findChild<QLabel*>(nome.toString());
         if (child)
             QMetaObject::invokeMethod(child, "setText", Qt::AutoConnection, Q_ARG(QString, valor.toString()));
+    } else if (bytes == "ok") { // receber um "ok" da placa significa que um g-code vindo do serial USB acabou de terminar de executar
+        if (s_filaParaEnviar.isEmpty())
+            return;
+
+        // ou seja, já podemos enviar a próxima linha
+        instance->enviarLinhaParaPlaca(s_filaParaEnviar);
     } else {
-        QMetaObject::invokeMethod(instance->ui->logSerial, "appendPlainText", Qt::AutoConnection, Q_ARG(QString, str));
+        QMetaObject::invokeMethod(instance->ui->logSerial, "appendPlainText", Qt::AutoConnection, Q_ARG(QString, bytes));
     }
 }
+
+void QLogger::enviarLinhaParaPlaca(QByteArray& buffer) {
+    auto i = buffer.indexOf('\n');
+    if (i == -1) {
+        // se o buffer é composto por somente uma linha é consumido por completo
+        instance->enviarBufferParaPlaca(buffer);
+        buffer.clear();
+    } else {
+        // caso contrario consumimos somente a primeira linha
+        instance->enviarBufferParaPlaca(buffer.first(i));
+        buffer.remove(0, i + 1);
+    }
+}
+
 
 void QLogger::mensagemRecebida() {
     if (!port || !port->isOpen())
         return;
 
     while (port->canReadLine()) {
-        auto str = port->readLine();
+        auto bytes = port->readLine();
+        while (bytes.back() == '\n')
+            bytes.chop(1);
 
-        while (str.back() == '\n')
-            str.chop(1);
-
-        linhaRecebida(std::move(str));
-
+        linhaRecebida(std::move(bytes));
     }
 }
 
 #ifdef ANDROID
 void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
-    static QByteArray buffer;
+    static QByteArray buffer = {};
 
     jsize jdataSize = env->GetArrayLength(jdata);
     if (jdataSize == 0)
         return;
 
     auto jelements = env->GetByteArrayElements(jdata, nullptr);
-
     buffer.append((const char*)jelements, jdataSize);
-
     env->ReleaseByteArrayElements(jdata, jelements, JNI_ABORT);
 
     qsizetype i = buffer.indexOf('\n');
@@ -109,8 +134,8 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
 }
 #endif
 
-void QLogger::enviarComando(QByteArray cmd) {
-    if (cmd.isEmpty())
+void QLogger::enviarBufferParaPlaca(QByteArray bytes) {
+    if (bytes.isEmpty())
         return;
 
 #ifdef ANDROID
@@ -130,12 +155,14 @@ void QLogger::enviarComando(QByteArray cmd) {
 
     env->DeleteLocalRef(buffer);
 #else
-    cmd.append("\n");
-    auto numBytes = port->write(cmd.data());
-    if (numBytes <= 0)
-        qDebug() << "falha ao escrever - [" << port->errorString() << "]";
+    bytes.append('\n');
+    auto numBytesEnviados = port->write(bytes);
+    if (numBytesEnviados == -1)
+        qDebug() << "falha ao enviar - [" << port->errorString() << "]";
+    else if (numBytesEnviados != bytes.size())
+        qDebug() << "não foi possivel enviar todos os bytes, sobraram" << bytes.size() - numBytesEnviados << "bytes";
     else
-        qDebug() << "enviados " << numBytes << " bytes";
+        qDebug() << "enviados" << bytes.size() << "bytes com sucesso";
 #endif
 }
 

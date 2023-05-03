@@ -19,14 +19,19 @@ public:
     QLogger(QWidget *parent = nullptr);
     ~QLogger();
 
-private:
     QSerialPort* acharPortValido();
     void tentarInicializarPort();
 
     static void linhaRecebida(QByteArray);
 
+    static inline QByteArray s_filaParaEnviar = {};
+
     void mensagemRecebida();
-    void enviarComando(QByteArray cmd);
+public slots:
+    void enviarBufferParaPlaca(QByteArray cmd);
+    void enviarLinhaParaPlaca(QByteArray& buffer);
+
+private:
     void finalizar();
     void reiniciarInterface();
 
