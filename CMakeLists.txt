@@ -13,10 +13,10 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets SerialPort)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets SerialPort)
 
 set(PROJECT_SOURCES
-        main.cpp
-        qlogger.cpp
-        qlogger.h
-        qlogger.ui
+    main.cpp
+    qlogger.cpp
+    qlogger.h
+    qlogger.ui
 )
 
 qt_add_executable(LucasLogger

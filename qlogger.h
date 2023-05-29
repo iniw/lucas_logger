@@ -28,7 +28,7 @@ public:
 
     void mensagemRecebida();
 public slots:
-    void enviarBufferParaPlaca(QByteArray cmd);
+    void enviarBufferParaPlaca(QByteArray cmd, bool adicionarNewline);
     void enviarLinhaParaPlaca(QByteArray& buffer);
 
 private:

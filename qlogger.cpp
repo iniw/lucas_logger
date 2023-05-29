@@ -3,6 +3,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <string_view>
+#include <algorithm>
 #include <QBuffer>
 #ifdef ANDROID
 #include <QtCore/qjniobject.h>
@@ -42,10 +43,10 @@ QLogger::QLogger(QWidget *parent)
     tentarInicializarPort();
 #endif
     QObject::connect(ui->enviarCmdReceitaPadrao, &QPushButton::clicked, this, [this]() {
-        instance->enviarBufferParaPlaca("L4");
+        instance->enviarBufferParaPlaca("L4", true);
     });
     QObject::connect(ui->enviarCmdHoming, &QPushButton::clicked, this, [this]() {
-        instance->enviarBufferParaPlaca("G28 XY");
+        instance->enviarBufferParaPlaca("G28 XY", true);
     });
     QObject::connect(ui->enviarGcode, &QPushButton::clicked, this, [this]() {
         auto bufferEscrito = ui->campoGcode->toPlainText().toLatin1();
@@ -87,15 +88,47 @@ void QLogger::linhaRecebida(QByteArray bytes) {
 }
 
 void QLogger::enviarLinhaParaPlaca(QByteArray& buffer) {
-    auto i = buffer.indexOf('\n');
-    if (i == -1) {
-        // se o buffer é composto por somente uma linha é consumido por completo
-        instance->enviarBufferParaPlaca(buffer);
-        buffer.clear();
+    // TODO: esses valores tem que vir da placa
+    constexpr qsizetype MAX_BYTES = 64;
+    constexpr auto DELIMITADORES = std::array<char, 2>{'#', '%'};
+
+    static bool enviandoEspecial = false;
+    static char delimitador = 0;
+    auto it = std::find(DELIMITADORES.begin(), DELIMITADORES.end(), buffer.front());
+    if (it != DELIMITADORES.end()) {
+        delimitador = *it;
+        qDebug() << "comecando envio especial do delimitador" << delimitador;
+    }
+
+    if (delimitador || enviandoEspecial) {
+        auto proximoDelimitador = buffer.indexOf(delimitador, !enviandoEspecial);
+        enviandoEspecial = true;
+        if (proximoDelimitador == -1) {
+            buffer.append(delimitador);
+            proximoDelimitador = buffer.size() - 1;
+        }
+
+        auto bytes = std::min(proximoDelimitador + 1, MAX_BYTES);
+        qDebug() << "enviando" << bytes << "bytes especiais";
+        instance->enviarBufferParaPlaca(buffer.first(bytes), false);
+        buffer.remove(0, bytes);
+
+        if (bytes == proximoDelimitador + 1) {
+            enviandoEspecial = false;
+            delimitador = 0;
+        }
     } else {
-        // caso contrario consumimos somente a primeira linha
-        instance->enviarBufferParaPlaca(buffer.first(i));
-        buffer.remove(0, i + 1);
+        auto i = buffer.indexOf('\n');
+        qDebug() << "enviando uma linha de gcode";
+        if (i == -1) {
+            // se o buffer é composto por somente uma linha é consumido por completo
+            instance->enviarBufferParaPlaca(buffer, true);
+            buffer.clear();
+        } else {
+            // caso contrario consumimos somente a primeira linha
+            instance->enviarBufferParaPlaca(buffer.first(i ? i : 1), true);
+            buffer.remove(0, i + 1);
+        }
     }
 }
 
@@ -134,18 +167,19 @@ void QLogger::javaMensagemRecebida(JNIEnv* env, jobject, jbyteArray jdata) {
 }
 #endif
 
-void QLogger::enviarBufferParaPlaca(QByteArray bytes) {
+void QLogger::enviarBufferParaPlaca(QByteArray bytes, bool adicionarNewline) {
     if (bytes.isEmpty())
         return;
 
 #ifdef ANDROID
     QJniEnvironment env;
-    jbyteArray buffer = env->NewByteArray(cmd.size() + 1);
+    jbyteArray buffer = env->NewByteArray(cmd.size() + adicionarNewline);
     if (!buffer)
         return;
 
     env->SetByteArrayRegion(buffer, 0, cmd.size(), (const jbyte*)cmd.data());
-    env->SetByteArrayRegion(buffer, cmd.size(), 1, (const jbyte*)"\n");
+    if (adicionarNewline)
+        env->SetByteArrayRegion(buffer, cmd.size(), 1, (const jbyte*)"\n");
 
     QJniObject::callStaticMethod<void>(
         "com/qtlucas/qtlog/Logger",
@@ -155,14 +189,16 @@ void QLogger::enviarBufferParaPlaca(QByteArray bytes) {
 
     env->DeleteLocalRef(buffer);
 #else
-    bytes.append('\n');
+    if (adicionarNewline)
+        bytes.append('\n');
+
     auto numBytesEnviados = port->write(bytes);
     if (numBytesEnviados == -1)
         qDebug() << "falha ao enviar - [" << port->errorString() << "]";
     else if (numBytesEnviados != bytes.size())
         qDebug() << "não foi possivel enviar todos os bytes, sobraram" << bytes.size() - numBytesEnviados << "bytes";
     else
-        qDebug() << "enviados" << bytes.size() << "bytes com sucesso";
+        qDebug() << "enviados" << bytes.size() << "bytes com sucesso\n" << bytes;
 #endif
 }
 
