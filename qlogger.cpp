@@ -88,9 +88,9 @@ void QLogger::linhaRecebida(QByteArray bytes) {
 }
 
 void QLogger::enviarLinhaParaPlaca(QByteArray& buffer) {
-    // TODO: esses valores tem que vir da placa
+    // TODO: esses valores tem que vir da placa™
     constexpr qsizetype MAX_BYTES = 64;
-    constexpr auto DELIMITADORES = std::array<char, 2>{'#', '%'};
+    constexpr auto DELIMITADORES = std::array<char, 3>{'#', '%', '$'};
 
     static bool enviandoEspecial = false;
     static char delimitador = 0;
